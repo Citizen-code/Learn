@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model content_exercise {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  exercise_id String   @db.Uuid
+  image       String?
+  phrase      String
+  definition  String
+  exercise    exercise @relation(fields: [exercise_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model employee {
+  id                   String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  surname              String
+  name                 String
+  patronymic           String
+  image                String?
+  employee_credentials employee_credentials?
+  employee_position    employee_position[]
+  exercise             exercise[]
+  result               result[]
+  test                 test[]
+}
+
+model employee_credentials {
+  employee_id String   @id @db.Uuid
+  login       String
+  password    String
+  employee    employee @relation(fields: [employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model employee_position {
+  employee_id String   @db.Uuid
+  position_id Int
+  employee    employee @relation(fields: [employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  position    position @relation(fields: [position_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@id([employee_id, position_id])
+}
+
+model exercise {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  author_id        String             @db.Uuid
+  level_id         Int
+  name             String
+  content_exercise content_exercise[]
+  employee         employee           @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  level            level              @relation(fields: [level_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model level {
+  id       Int        @id @default(autoincrement())
+  name     String
+  exercise exercise[]
+  test     test[]
+}
+
+model position {
+  id                Int                 @id @default(autoincrement())
+  name              String
+  employee_position employee_position[]
+}
+
+model result {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  test_id     String   @db.Uuid
+  employee_id String   @db.Uuid
+  correct     Int
+  count       Int
+  employee    employee @relation(fields: [employee_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test        test     @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model test {
+  id             String          @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  description    String?
+  image          String?
+  is_public      Boolean
+  level_id       Int
+  author_id      String          @db.Uuid
+  result         result[]
+  employee       employee        @relation(fields: [author_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  level          level           @relation(fields: [level_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  test_questions test_questions?
+}
+
+model test_questions {
+  test_id  String @id @db.Uuid
+  question Json
+  test     test   @relation(fields: [test_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
